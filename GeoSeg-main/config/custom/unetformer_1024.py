@@ -54,7 +54,7 @@ net = UNetFormer(num_classes=num_classes, pretrained=use_pretrained)
 loss = UnetFormerLoss(ignore_index=ignore_index)
 use_aux_loss = True
 
-data_root = os.environ.get('GEOSEG_DATA_ROOT', '/home/tqg/train')
+data_root = os.environ.get('GEOSEG_DATA_ROOT', '/root/autodl-tmp/data/train')
 train_dataset = CustomRemoteSensingDataset(
     data_root=data_root, split='train', transform=_normalize
 )
@@ -62,7 +62,7 @@ val_dataset = CustomRemoteSensingDataset(
     data_root=data_root, split='val', transform=_validate
 )
 test_dataset = CustomRemoteSensingTestDataset(
-    data_root=os.environ.get('GEOSEG_TEST_ROOT', '/home/tqg/test_1'),
+    data_root=os.environ.get('GEOSEG_TEST_ROOT', '/root/autodl-tmp/data/test'),
     transform=_validate,
 )
 
