@@ -17,6 +17,9 @@ from tools.utils import Lookahead, process_model_params
 
 max_epoch = 100
 ignore_index = 255
+# Exponential moving average is used for validation and inference.
+use_ema = True
+ema_decay = 0.999
 # The competition's raw mask uses ID 0 for Ignore.  The dataset converts it
 # to 255 before loss/crop processing, and metrics exclude the unused class-0
 # output channel from mIoU/F1 while also masking 255 pixels.
@@ -31,7 +34,7 @@ backbone_weight_decay = 0.01
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = 'unetformer-r18-custom-512-crop-ms-e100'
+weights_name = 'unetformer-r18-custom-512-crop-ms-e100-ema'
 weights_path = f'model_weights/custom/{weights_name}'
 test_weights_name = weights_name
 log_name = f'custom/{weights_name}'

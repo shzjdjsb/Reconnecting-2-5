@@ -1,3 +1,5 @@
+import copy
+
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from tools.cfg import py2cfg
@@ -35,6 +37,13 @@ class Supervision_Train(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = config.net
+        self.use_ema = getattr(config, 'use_ema', False)
+        self.ema_decay = getattr(config, 'ema_decay', 0.999)
+        if self.use_ema:
+            self.ema_net = copy.deepcopy(self.net)
+            self.ema_net.eval()
+            for param in self.ema_net.parameters():
+                param.requires_grad_(False)
 
         self.loss = config.loss
 
@@ -52,9 +61,25 @@ class Supervision_Train(pl.LightningModule):
         )
 
     def forward(self, x):
-        # only net is used in the prediction/inference
-        seg_pre = self.net(x)
+        # use the EMA network for validation and inference when enabled
+        if self.use_ema and not self.training:
+            seg_pre = self.ema_net(x)
+        else:
+            seg_pre = self.net(x)
         return seg_pre
+
+    def _update_ema(self):
+        if not self.use_ema:
+            return
+
+        with torch.no_grad():
+            for ema_param, param in zip(self.ema_net.parameters(), self.net.parameters()):
+                ema_param.mul_(self.ema_decay).add_(param, alpha=1.0 - self.ema_decay)
+            for ema_buffer, buffer in zip(self.ema_net.buffers(), self.net.buffers()):
+                ema_buffer.copy_(buffer)
+
+    def on_before_zero_grad(self, optimizer):
+        self._update_ema()
 
     def training_step(self, batch, batch_idx):
         img, mask = batch['img'], batch['gt_semantic_seg']
