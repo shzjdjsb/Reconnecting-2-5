@@ -19,8 +19,8 @@ def get_args():
     parser.add_argument('-b', '--batch_size', type=int, default=2)
     parser.add_argument('-t', '--tta', default=None, choices=['lr', 'd4'])
     parser.add_argument(
-        '--no-ema', action='store_true',
-        help='Use the raw training network instead of the EMA network.'
+        '--network', choices=['ema', 'net'], default='ema',
+        help='Network used for inference.'
     )
     return parser.parse_args()
 
@@ -32,9 +32,9 @@ def main():
     model = Supervision_Train.load_from_checkpoint(
         f'{config.weights_path}/{config.test_weights_name}.ckpt', config=config
     ).to(device).eval()
-    # Keep the EMA-enabled config so the checkpoint loads both networks, then
-    # optionally switch inference to the raw network for a fair ablation.
-    if args.no_ema:
+    # The EMA-enabled config loads both networks; select the requested one
+    # after loading so either network can be compared from the same checkpoint.
+    if args.network == 'net':
         model.use_ema = False
     if args.tta == 'lr':
         model = tta.SegmentationTTAWrapper(
